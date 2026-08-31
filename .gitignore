@@ -92,9 +92,9 @@ backup/
 backups/
 
 # ==============================
-# Reports / Generated files
+# Generated files
 # ==============================
-reports/generated/
+generated/
 output/
 exports/
 
@@ -111,3 +111,6 @@ uploads/
 # ==============================
 Thumbs.db
 Desktop.ini
+
+akipos/
+akipos.*
