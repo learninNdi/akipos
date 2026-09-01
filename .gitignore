@@ -114,3 +114,6 @@ Desktop.ini
 
 akipos/
 akipos.*
+
+migrate*.py
+test*.py
