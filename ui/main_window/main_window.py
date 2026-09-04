@@ -16,6 +16,7 @@ from config import APP_VERSION
 from config import APP_LOGO
 
 from ui.pages.dashboard.page import dashboard_page
+from ui.pages.sales.page import sales_page
 from ui.styles.theme import apply_theme
 
 class MainWindow(QMainWindow):
@@ -120,7 +121,7 @@ class MainWindow(QMainWindow):
     def create_pages(self):
         for builder in [
             dashboard_page,
-            # self.sales_page,
+            sales_page,
             # self.products_page,
             # self.purchases_page,
             # self.customers_page,
