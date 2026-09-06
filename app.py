@@ -2,7 +2,6 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QFont
-from PyQt6.QtGui import QIcon
 
 from ui.main_window.main_window import MainWindow
 from ui.styles.theme import apply_theme

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer, QDateTime
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import (
     QMainWindow,
@@ -94,6 +94,17 @@ class MainWindow(QMainWindow):
         l.addWidget(QLabel(f"{APP_NAME} {APP_VERSION}", objectName="BrandSub"))
         return side
 
+    def update_datetime(self):
+        current = QDateTime.currentDateTime()
+
+        datetime_text = current.toString(
+            "dddd, dd MMMM yyyy  •  HH:mm:ss"
+        )
+
+        self.datetime_label.setText(
+            datetime_text
+        )
+
     def create_topbar(self):
         bar = QFrame()
         bar.setObjectName("TopBar")
@@ -106,17 +117,40 @@ class MainWindow(QMainWindow):
         l.addWidget(self.page_title)
         l.addStretch()
 
-        l.addWidget(QLabel("30 Agustus 2026", objectName="Muted"))
+        self.datetime_label = QLabel()
+        self.datetime_label.setObjectName("Muted")
+
+        l.addWidget(self.datetime_label)
+
+        self.update_datetime()
+
+        self.datetime_timer = QTimer(self)
+        self.datetime_timer.timeout.connect(
+            self.update_datetime
+        )
+
+        self.datetime_timer.start(1000)
+        
         self.theme_button = QPushButton("☀  Light")
         self.theme_button.setObjectName("Theme")
         self.theme_button.setCursor(Qt.PointingHandCursor)
         self.theme_button.clicked.connect(self.toggle_theme)
         l.addWidget(self.theme_button)
-        l.addWidget(QLabel("Admin"))
         return bar
 
     def toggle_theme(self):
-        apply_theme(self, "light" if self.current_theme == "dark" else "dark")
+        self.current_theme = (
+            "light"
+            if self.current_theme == "dark"
+            else "dark"
+        )
+
+        apply_theme(self, self.current_theme)
+
+        self.theme_button.setText(
+            "☀  Light" if self.current_theme == "dark"
+            else "☾  Dark"
+        )
 
     def create_pages(self):
         for builder in [

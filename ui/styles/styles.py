@@ -45,6 +45,68 @@ QHeaderView::section {
 QSplitter::handle { background:#29364a; }
 
 SalesBarChart#painterBackgroundColor { background:#0b1220; }
+
+QComboBox#StockFilter {
+    background-color: #0b1220;
+    color: #f1f1f1;
+    border: 1px solid #454b54;
+    border-radius: 6px;
+    padding: 7px 10px;
+    min-height: 20px;
+}
+
+QComboBox#StockFilter:hover {
+    border: 1px solid #666d78;
+}
+
+QComboBox#StockFilter:focus {
+    border: 1px solid #7d8795;
+}
+
+QComboBox#StockFilter::drop-down {
+    border: none;
+    width: 28px;
+}
+
+QComboBox#StockFilter::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox#StockFilter QAbstractItemView {
+    background-color: #0b1220;
+    color: #f1f1f1;
+    border: 1px solid #454b54;
+    selection-background-color: #0b1220 ;
+    selection-color: #0b1220;
+    padding: 4px;
+}
+
+QPushButton#Danger {
+    background-color: #3a2023;
+    color: #ff8a8a;
+    border: 1px solid #633338;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-weight: 600;
+}
+
+QPushButton#Danger:hover {
+    background-color: #5a292e;
+    color: #ffffff;
+    border: 1px solid #8a4148;
+}
+
+QPushButton#Danger:pressed {
+    background-color: #702f35;
+}
+
+QPushButton#Danger:disabled {
+    background-color: #292929;
+    color: #666666;
+    border: 1px solid #3a3a3a;
+}
+
 """
 
 LIGHT_THEME = """

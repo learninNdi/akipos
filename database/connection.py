@@ -7,7 +7,8 @@ from config import DATABASE_CONFIG
 def get_connection():
     try:
         connection = mysql.connector.connect(
-            **DATABASE_CONFIG
+            **DATABASE_CONFIG,
+            use_pure=True
         )
 
         if connection.is_connected():
