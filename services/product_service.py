@@ -3,27 +3,26 @@ from repositories.product_repository import ProductRepository
 class ProductService:
 
     @staticmethod
-    def get_products():
-        products = ProductRepository.get_all()
+    def get_new_products():
+        products = ProductRepository.get_new_products()
 
         return products
 
     @staticmethod
-    def search_products(keyword):
+    def search_new_products(keyword):
         keyword = keyword.strip()
 
         if not keyword:
-            return ProductRepository.get_all()
+            return ProductRepository.get_new_products()
 
         return ProductRepository.search(keyword)
 
-
     @staticmethod
-    def get_product(product_id):
+    def get_new_product(product_id):
         if not product_id:
             return None
 
-        return ProductRepository.get_product_by_id(product_id)
+        return ProductRepository.get_new_product_by_id(product_id)
 
     @staticmethod
     def has_stock(product, quantity=1):
@@ -55,4 +54,9 @@ class ProductService:
             )
 
         return True, None
+
+    @staticmethod
+    def get_used_products():
+
+        return ProductRepository.get_used_products()    
     

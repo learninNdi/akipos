@@ -9,14 +9,17 @@ from PyQt5.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QMessageBox,
-    QHeaderView
+    QComboBox,
+    QHeaderView,
 )
 
 from ui.widgets.rupiah import rupiah
+from services.product_service import ProductService
 
 class Cart(QFrame):
 
     total_changed = pyqtSignal(float)
+    checkout_requested = pyqtSignal(object)
 
     def __init__(self):
         super().__init__()
@@ -24,9 +27,15 @@ class Cart(QFrame):
         self.setObjectName("Panel")
 
         self.items = []
+        self.used_products = []
 
         self.setup_ui()
         self.setup_connections()
+
+        self.load_used_batteries()
+
+        # Default
+        self.on_transaction_type_changed(0)
 
     # ==========================================================
     # UI
@@ -36,12 +45,56 @@ class Cart(QFrame):
 
         layout = QVBoxLayout(self)
 
+        layout.setContentsMargins(
+            15, 15, 15, 15
+        )
+
+        layout.setSpacing(10)
+
+        # ======================================================
+        # TITLE
+        # ======================================================
+
         layout.addWidget(
             QLabel(
                 "Keranjang",
                 objectName="PanelTitle"
             )
         )
+
+        # ======================================================
+        # TRANSACTION TYPE
+        # ======================================================
+
+        transaction_layout = QHBoxLayout()
+
+        transaction_layout.addWidget(
+            QLabel(
+                "Jenis Transaksi"
+            )
+        )
+
+        self.transaction_type = QComboBox()
+        self.transaction_type.setObjectName("ComboBoxFilter")
+
+        self.transaction_type.addItems([
+            "Penjualan Biasa",
+            "Tukar Tambah Aki",
+            "Beli Aki Bekas",
+        ])
+
+        transaction_layout.addWidget(
+            self.transaction_type,
+            1
+        )
+
+        layout.addLayout(
+            transaction_layout
+        )
+
+        # ======================================================
+        # CART TABLE
+        # ======================================================
 
         self.table = QTableWidget()
 
@@ -63,11 +116,17 @@ class Cart(QFrame):
             QTableWidget.SelectRows
         )
 
-        self.table.verticalHeader().setVisible(False)
+        self.table.setSelectionMode(
+            QTableWidget.SingleSelection
+        )
+
+        self.table.verticalHeader().setVisible(
+            False
+        )
 
         header = self.table.horizontalHeader()
 
-        # Produk → mengambil sisa ruang
+        # Produk
         header.setSectionResizeMode(
             0,
             QHeaderView.Stretch
@@ -78,35 +137,119 @@ class Cart(QFrame):
             1,
             QHeaderView.Fixed
         )
-        header.resizeSection(1, 60)
+        header.resizeSection(
+            1,
+            55
+        )
 
         # Harga
         header.setSectionResizeMode(
             2,
             QHeaderView.Fixed
         )
-        header.resizeSection(2, 110)
+        header.resizeSection(
+            2,
+            110
+        )
 
         # Total
         header.setSectionResizeMode(
             3,
             QHeaderView.Fixed
         )
-        header.resizeSection(3, 120)
+        header.resizeSection(
+            3,
+            120
+        )
 
-        # Tombol hapus
+        # Hapus
         header.setSectionResizeMode(
             4,
             QHeaderView.Fixed
         )
-        header.resizeSection(4, 40)
+        header.resizeSection(
+            4,
+            40
+        )
 
         layout.addWidget(
             self.table,
             1
         )
 
+        # ======================================================
+        # TRADE IN / BUY USED
+        # ======================================================
+
+        self.used_battery_frame = QFrame()
+
+        self.used_battery_frame.setObjectName(
+            "TradeInPanel"
+        )
+
+        used_layout = QVBoxLayout(
+            self.used_battery_frame
+        )
+
+        used_layout.setContentsMargins(
+            0, 0, 0, 0
+        )
+
+        used_layout.setSpacing(7)
+
+        # Label
+        self.used_battery_title = QLabel(
+            "Aki Bekas"
+        )
+
+        self.used_battery_title.setObjectName(
+            "PanelTitle"
+        )
+
+        used_layout.addWidget(
+            self.used_battery_title
+        )
+
+        # ======================================================
+        # USED BATTERY
+        # ======================================================
+
+        self.used_battery_combo = QComboBox()
+        self.used_battery_combo.setObjectName("ComboBoxFilter")
+
+        self.used_battery_combo.addItem(
+            "Pilih aki bekas...",
+            None
+        )
+
+        used_layout.addWidget(
+            self.used_battery_combo
+        )
+
+        # ======================================================
+        # PURCHASE / TRADE-IN PRICE
+        # ======================================================
+
+        self.used_battery_price = QLineEdit()
+
+        self.used_battery_price.setPlaceholderText(
+            "Harga beli / nilai tukar"
+        )
+
+        used_layout.addWidget(
+            self.used_battery_price
+        )
+
+        layout.addWidget(
+            self.used_battery_frame
+        )
+
+        # ======================================================
+        # CUSTOMER
+        # ======================================================
+
         self.customer_input = QLineEdit()
+
         self.customer_input.setPlaceholderText(
             "Pelanggan (opsional)"
         )
@@ -115,7 +258,12 @@ class Cart(QFrame):
             self.customer_input
         )
 
+        # ======================================================
+        # VEHICLE
+        # ======================================================
+
         self.vehicle_input = QLineEdit()
+
         self.vehicle_input.setPlaceholderText(
             "No. polisi / kendaraan (opsional)"
         )
@@ -123,6 +271,10 @@ class Cart(QFrame):
         layout.addWidget(
             self.vehicle_input
         )
+
+        # ======================================================
+        # TOTAL
+        # ======================================================
 
         total_layout = QHBoxLayout()
 
@@ -135,7 +287,9 @@ class Cart(QFrame):
 
         total_layout.addStretch()
 
-        self.total_label = QLabel("Rp 0")
+        self.total_label = QLabel(
+            "Rp 0"
+        )
 
         self.total_label.setAlignment(
             Qt.AlignRight
@@ -153,8 +307,11 @@ class Cart(QFrame):
             total_layout
         )
 
+        # ======================================================
+        # PAYMENT BUTTON
+        # ======================================================
+
         self.pay_button = QPushButton(
-            # "BAYAR  F4"
             "BAYAR"
         )
 
@@ -162,68 +319,191 @@ class Cart(QFrame):
             "Primary"
         )
 
-        self.pay_button.setMinimumHeight(44)
+        self.pay_button.clicked.connect(
+            self.checkout
+        )
+
+        self.pay_button.setMinimumHeight(
+            44
+        )
 
         layout.addWidget(
             self.pay_button
         )
 
+    def load_used_batteries(self):
+        try:
+            self.used_products = (ProductService.get_used_products())
+
+            for product in self.used_products:
+                self.used_battery_combo.addItem(
+                    f"{product['item_name']}",
+                    f"{product['item_id']}",
+                )
+        except Exception as e:
+            print("ERROR LOAD USED BATTERIES:", e)
+
     # ==========================================================
-    # CONNECTION
+    # CONNECTIONS
     # ==========================================================
 
     def setup_connections(self):
 
-        pass
+        self.transaction_type.currentIndexChanged.connect(
+            self.on_transaction_type_changed
+        )
+
+        self.used_battery_price.textChanged.connect(
+            self.update_total
+        )
+
+    # ==========================================================
+    # TRANSACTION TYPE
+    # ==========================================================
+
+    def on_transaction_type_changed(self, index):
+
+        # ------------------------------------------------------
+        # 0 = PENJUALAN BIASA
+        # ------------------------------------------------------
+
+        if index == 0:
+
+            self.used_battery_frame.hide()
+
+            self.pay_button.setText(
+                "BAYAR"
+            )
+
+        # ------------------------------------------------------
+        # 1 = TUKAR TAMBAH
+        # ------------------------------------------------------
+
+        elif index == 1:
+
+            self.used_battery_frame.show()
+
+            self.used_battery_title.setText(
+                "Aki Lama"
+            )
+
+            self.used_battery_price.setPlaceholderText(
+                "Nilai tukar tambah"
+            )
+
+            self.pay_button.setText(
+                "BAYAR SELISIH"
+            )
+
+        # ------------------------------------------------------
+        # 2 = BELI AKI BEKAS
+        # ------------------------------------------------------
+
+        elif index == 2:
+
+            self.used_battery_frame.show()
+
+            self.used_battery_title.setText(
+                "Aki Bekas"
+            )
+
+            self.used_battery_price.setPlaceholderText(
+                "Harga beli aki bekas"
+            )
+
+            self.pay_button.setText(
+                "BAYAR KE PELANGGAN"
+            )
+
+        self.update_total()
 
     # ==========================================================
     # ADD PRODUCT
     # ==========================================================
 
-    def add_product(self, product):
+    def add_product(
+        self,
+        product,
+        quantity=1
+    ):
+
+        # Beli aki bekas tidak menggunakan
+        # product dari ProductList sebagai barang baru.
+        if self.transaction_type.currentIndex() == 2:
+            return
+
+        item_id = product["item_id"]
+
+        # ------------------------------------------------------
+        # SUDAH ADA
+        # ------------------------------------------------------
 
         for item in self.items:
 
-            if item["product_id"] == product["item_id"]:
+            if item["item_id"] == item_id:
 
-                new_qty = item["quantity"] + 1
+                new_quantity = item["quantity"]+1
 
-                if new_qty > product["quantity"]:
+                if new_quantity > product["quantity"]:
 
                     QMessageBox.warning(
                         self,
                         "Stok Tidak Cukup",
-                        f'Stok {product["name"]} '
-                        f'hanya {product["stock"]}.'
+                        f'Stok {product["item_name"]} '
+                        f'hanya {product["quantity"]}.'
                     )
 
-                    return
+                    return False
 
-                item["quantity"] = new_qty
+                item["quantity"] = new_quantity
 
                 self.refresh()
 
-                return
+                return True
+
+        # ------------------------------------------------------
+        # STOK
+        # ------------------------------------------------------
 
         if product["quantity"] <= 0:
 
             QMessageBox.warning(
                 self,
                 "Stok Habis",
-                f'Produk "{product["name"]}" '
+                f'Produk "{product["item_name"]}" '
                 "tidak memiliki stok."
             )
 
-            return
+            return False
+
+        if quantity > product["quantity"]:
+
+            QMessageBox.warning(
+                self,
+                "Stok Tidak Cukup",
+                f'Stok {product["item_name"]} '
+                f'hanya {product["quantity"]}.'
+            )
+
+            return False
+
+        # ------------------------------------------------------
+        # ADD
+        # ------------------------------------------------------
 
         self.items.append({
-            "product_id": product["item_id"],
-            "name": product["item_name"],
-            "price": float(product["selling_price"]),
+            "item_id": product["item_id"],
+            "item_name": product["item_name"],
+            "price": float(
+                product["selling_price"]
+            ),
+            "quantity": quantity,
             "quantity": 1,
         })
 
         self.refresh()
+
+        return True
 
     # ==========================================================
     # REFRESH
@@ -235,7 +515,9 @@ class Cart(QFrame):
             len(self.items)
         )
 
-        for row, item in enumerate(self.items):
+        for row, item in enumerate(
+            self.items
+        ):
 
             total = (
                 item["price"]
@@ -246,7 +528,7 @@ class Cart(QFrame):
                 row,
                 0,
                 QTableWidgetItem(
-                    item["name"]
+                    item["item_name"]
                 )
             )
 
@@ -278,11 +560,28 @@ class Cart(QFrame):
                 )
             )
 
-            button = QPushButton("x")
-            button.setObjectName("Danger")
-            button.setCursor(Qt.PointingHandCursor)
-            button.setFixedSize(28, 28)
-            button.setToolTip("Hapus Produk")
+            # --------------------------------------------------
+            # DELETE BUTTON
+            # --------------------------------------------------
+
+            button = QPushButton("×")
+
+            button.setObjectName(
+                "Danger"
+            )
+
+            button.setCursor(
+                Qt.PointingHandCursor
+            )
+
+            button.setFixedSize(
+                28,
+                28
+            )
+
+            button.setToolTip(
+                "Hapus produk"
+            )
 
             button.clicked.connect(
                 lambda checked=False, r=row:
@@ -313,12 +612,79 @@ class Cart(QFrame):
     # TOTAL
     # ==========================================================
 
-    def get_total(self):
+    def get_cart_total(self):
 
         return sum(
-            item["price"] * item["quantity"]
+            item["price"]
+            * item["quantity"]
             for item in self.items
         )
+
+    def get_used_battery_value(self):
+
+        text = (
+            self.used_battery_price
+            .text()
+            .strip()
+        )
+
+        if not text:
+            return 0
+
+        try:
+
+            return float(
+                text
+                .replace("Rp", "")
+                .replace(".", "")
+                .replace(",", "")
+                .strip()
+            )
+
+        except ValueError:
+
+            return 0
+
+    def get_total(self):
+
+        transaction_type = (
+            self.transaction_type.currentIndex()
+        )
+
+        cart_total = self.get_cart_total()
+
+        used_value = (
+            self.get_used_battery_value()
+        )
+
+        # ------------------------------------------------------
+        # PENJUALAN BIASA
+        # ------------------------------------------------------
+
+        if transaction_type == 0:
+
+            return cart_total
+
+        # ------------------------------------------------------
+        # TUKAR TAMBAH
+        # ------------------------------------------------------
+
+        if transaction_type == 1:
+
+            return max(
+                cart_total - used_value,
+                0
+            )
+
+        # ------------------------------------------------------
+        # BELI AKI BEKAS
+        # ------------------------------------------------------
+
+        if transaction_type == 2:
+
+            return used_value
+
+        return 0
 
     def update_total(self):
 
@@ -328,7 +694,9 @@ class Cart(QFrame):
             rupiah(total)
         )
 
-        self.total_changed.emit(total)
+        self.total_changed.emit(
+            total
+        )
 
     # ==========================================================
     # CLEAR
@@ -339,10 +707,56 @@ class Cart(QFrame):
         self.items.clear()
 
         self.customer_input.clear()
+
         self.vehicle_input.clear()
+
+        self.used_battery_combo.setCurrentIndex(
+            0
+        )
+
+        self.used_battery_price.clear()
+
+        self.transaction_type.setCurrentIndex(
+            0
+        )
 
         self.refresh()
 
-    # ==========================================================
-    # FORMAT
-    # ==========================================================
+    def checkout(self):
+        if self.table.rowCount() == 0:
+            QMessageBox.warning(
+                self,
+                "Checkout",
+                "Keranjang masih kosong."
+            )
+
+            return
+
+        self.checkout_requested.emit(self.get_cart_data())
+
+    def get_cart_data(self):
+        items = []
+
+        for item in self.items:
+            product_id = item["item_id"]
+            product_name = item["item_name"]
+            quantity = item["quantity"]
+            price = item["price"]
+
+            total = price * quantity
+
+            items.append({
+                "product_id": product_id,
+                "product_name": product_name,
+                "quantity": quantity,
+                "price": price,
+                "total": total
+            })
+
+        return {
+            "items": items,
+            "transaction_type": self.transaction_type.currentIndex(),
+            "customer_name": self.customer_input.text().strip(),
+            "vehicle_number": self.vehicle_input.text().strip(),
+            "total": self.get_total()
+        }

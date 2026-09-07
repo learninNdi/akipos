@@ -50,7 +50,7 @@ class ProductList(QWidget):
         )
 
         self.stock_filter = QComboBox()
-        self.stock_filter.setObjectName("StockFilter")
+        self.stock_filter.setObjectName("ComboBoxFilter")
         self.stock_filter.addItems([
             "Semua",
             "Tersedia",
@@ -113,7 +113,7 @@ class ProductList(QWidget):
 
     def load_products(self):
         try:
-            self.products = ProductService.get_products()
+            self.products = ProductService.get_new_products()
             self.apply_filter()
 
         except Exception as e:

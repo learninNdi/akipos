@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QSplitter
 from ui.widgets.page_base import page_base
 from ui.pages.products.product_list import ProductList
 from ui.pages.products.cart import Cart
+from ui.pages.checkout.page import CheckoutDialog
 
 
 def sales_page():
@@ -28,6 +29,10 @@ def sales_page():
         cart.add_product
     )
 
+    cart.checkout_requested.connect(
+        handle_checkout
+    )
+
 #     split.setStretchFactor(0, 3)
 #     split.setStretchFactor(1, 2)
 
@@ -37,3 +42,11 @@ def sales_page():
     )
 
     return page
+
+def handle_checkout(data):
+    dialog = CheckoutDialog(data)
+
+    if dialog.exec_():
+        payment_data = dialog.get_payment_data()
+
+        print(payment_data)
