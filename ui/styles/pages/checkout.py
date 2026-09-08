@@ -1,5 +1,5 @@
-CHECKOUT_STYLE = """
-QDialog {
+DARK_CHECKOUT_STYLE = """
+QDialog#CheckoutDialog {
     background-color: #0b1220;
 }
 
@@ -8,6 +8,7 @@ QDialog {
    ============================== */
 
 QLabel#CheckoutTitle {
+    color: #f5f5f5;
     font-size: 24px;
     font-weight: 700;
 }
@@ -22,39 +23,41 @@ QLabel#CheckoutSubtitle {
    ============================== */
 
 QLabel#SectionTitle {
+    color: #f0f0f0;
     font-size: 14px;
     font-weight: 600;
 }
 
 QLabel#FieldLabel {
+    color: #aaaaaa;
     font-size: 13px;
     font-weight: 600;
-    color: #aaaaaa;
 }
 
 /* ==============================
-   TOTAL
+   TOTAL CARD
    ============================== */
 
 QFrame#TotalCard {
-    background-color: #111827;
+    background-color: #222222;
     border: 1px solid #333333;
     border-radius: 10px;
 }
 
 QLabel#TotalCaption {
     color: #999999;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
 }
 
 QLabel#TotalAmount {
-    font-size: 32px;
+    color: #ffffff;
+    font-size: 30px;
     font-weight: 700;
 }
 
 /* ==============================
-   CASH
+   CASH FRAME
    ============================== */
 
 QFrame#CashFrame {
@@ -64,43 +67,12 @@ QFrame#CashFrame {
 }
 
 /* ==============================
-   INPUT
-   ============================== */
-
-QLineEdit {
-    background-color: #292929;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 15px;
-}
-
-QLineEdit:focus {
-    border: 1px solid #777777;
-}
-
-/* ==============================
-   COMBOBOX
-   ============================== */
-
-QComboBox {
-    background-color: #292929;
-    border: 1px solid #444444;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 15px;
-}
-
-QComboBox:hover {
-    border: 1px solid #666666;
-}
-
-/* ==============================
    QUICK CASH
    ============================== */
 
 QPushButton#QuickCash {
     background-color: #292929;
+    color: #dddddd;
     border: 1px solid #444444;
     border-radius: 5px;
     padding: 5px 8px;
@@ -111,52 +83,138 @@ QPushButton#QuickCash:hover {
     background-color: #353535;
 }
 
+QPushButton#QuickCash:pressed {
+    background-color: #222222;
+}
+
 /* ==============================
    CHANGE
    ============================== */
 
 QLabel#ChangeAmount {
+    color: #ffffff;
     font-size: 20px;
     font-weight: 700;
 }
 
 QLabel#ChangeWarning {
-    color: #ff8585;
+    color: #ff7777;
     font-size: 20px;
     font-weight: 700;
 }
 
+"""
+
+
+LIGHT_CHECKOUT_STYLE = """
+QDialog#CheckoutDialog {
+    background-color: #f5f6f8;
+}
+
 /* ==============================
-   BUTTON
+   HEADER
    ============================== */
 
-QPushButton#Primary {
-    background-color: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
+QLabel#CheckoutTitle {
+    color: #202124;
+    font-size: 24px;
     font-weight: 700;
+}
+
+QLabel#CheckoutSubtitle {
+    color: #777777;
+    font-size: 13px;
+}
+
+/* ==============================
+   SECTION
+   ============================== */
+
+QLabel#SectionTitle {
+    color: #202124;
     font-size: 14px;
-}
-
-QPushButton#Primary:hover {
-    background-color: #4b8df8;
-}
-
-QPushButton#Primary:pressed {
-    background-color: #2869cc;
-}
-
-QPushButton#Secondary {
-    background-color: #292929;
-    color: #dddddd;
-    border: 1px solid #444444;
-    border-radius: 6px;
     font-weight: 600;
-    font-size: 14px;
 }
 
-QPushButton#Secondary:hover {
-    background-color: #353535;
+QLabel#FieldLabel {
+    color: #666666;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ==============================
+   TOTAL CARD
+   ============================== */
+
+QFrame#TotalCard {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+}
+
+QLabel#TotalCaption {
+    color: #777777;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QLabel#TotalAmount {
+    color: #202124;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+/* ==============================
+   CASH FRAME
+   ============================== */
+
+QFrame#CashFrame {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+}
+
+/* ==============================
+   QUICK CASH
+   ============================== */
+
+QPushButton#QuickCash {
+    background-color: #ffffff;
+    color: #333333;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+QPushButton#QuickCash:hover {
+    background-color: #eeeeee;
+}
+
+QPushButton#QuickCash:pressed {
+    background-color: #e5e5e5;
+}
+
+/* ==============================
+   CHANGE
+   ============================== */
+
+QLabel#ChangeAmount {
+    color: #202124;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+QLabel#ChangeWarning {
+    color: #d93025;
+    font-size: 20px;
+    font-weight: 700;
 }
 """
+
+
+def get_checkout_style(theme):
+    if theme == "light":
+        return LIGHT_CHECKOUT_STYLE
+
+    return DARK_CHECKOUT_STYLE

@@ -1,52 +1,88 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSplitter
+from PyQt5.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
-from ui.widgets.page_base import page_base
 from ui.pages.products.product_list import ProductList
 from ui.pages.products.cart import Cart
 from ui.pages.checkout.page import CheckoutDialog
 
+class SalesPage(QWidget):
 
-def sales_page():
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-    page, layout = page_base(
-        "Penjualan",
-        "Kasir • Cash / Transfer / QRIS"
-    )
+        self.parent_window = parent
+        self.current_theme = getattr(
+            parent,
+            "current_theme",
+            "dark"
+        )
 
-    split = QSplitter(Qt.Horizontal)
+        self.setup_ui()
+        self.setup_connections()
 
-    split.setChildrenCollapsible(False)
+    def setup_ui(self):
 
-    product_list = ProductList()
-    cart = Cart()
+        layout = QVBoxLayout(self)
 
-    split.addWidget(product_list)
-    split.addWidget(cart)
+        layout.setContentsMargins(
+            20, 20, 20, 20
+        )
 
-    # ProductList → Cart
-    product_list.product_selected.connect(
-        cart.add_product
-    )
+        layout.setSpacing(15)
 
-    cart.checkout_requested.connect(
-        handle_checkout
-    )
+        self.splitter = QSplitter(
+            Qt.Horizontal
+        )
 
-#     split.setStretchFactor(0, 3)
-#     split.setStretchFactor(1, 2)
+        self.splitter.setChildrenCollapsible(
+            False
+        )
 
-    layout.addWidget(
-        split,
-        1
-    )
+        self.product_list = ProductList()
+        self.cart = Cart()
 
-    return page
+        self.splitter.addWidget(
+            self.product_list
+        )
 
-def handle_checkout(data):
-    dialog = CheckoutDialog(data)
+        self.splitter.addWidget(
+            self.cart
+        )
 
-    if dialog.exec_():
-        payment_data = dialog.get_payment_data()
+        self.splitter.setStretchFactor(0, 3)
+        self.splitter.setStretchFactor(1, 2)
 
-        print(payment_data)
+        layout.addWidget(
+            self.splitter,
+            1
+        )
+
+    def setup_connections(self):
+
+        self.product_list.product_selected.connect(
+            self.cart.add_product
+        )
+
+        self.cart.checkout_requested.connect(
+            self.handle_checkout
+        )
+
+    def handle_checkout(self, data):
+
+        dialog = CheckoutDialog(
+            data,
+            parent=self,
+            theme=self.current_theme
+        )
+
+        if dialog.exec_():
+
+            payment_data = (
+                dialog.get_payment_data()
+            )
+
+            print(payment_data)
+
+    def set_theme(self, theme):
+
+        self.current_theme = theme

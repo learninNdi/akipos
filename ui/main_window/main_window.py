@@ -16,7 +16,7 @@ from config import APP_VERSION
 from config import APP_LOGO
 
 from ui.pages.dashboard.page import dashboard_page
-from ui.pages.sales.page import sales_page
+from ui.pages.sales.page import SalesPage
 from ui.styles.theme import apply_theme
 
 class MainWindow(QMainWindow):
@@ -153,17 +153,15 @@ class MainWindow(QMainWindow):
         )
 
     def create_pages(self):
-        for builder in [
-            dashboard_page,
-            sales_page,
-            # self.products_page,
-            # self.purchases_page,
-            # self.customers_page,
-            # self.suppliers_page,
-            # self.reports_page,
-            # self.settings_page
-        ]:
-            self.pages.addWidget(builder())
+        self.sales_page = SalesPage(self)
+
+        self.pages.addWidget(
+            dashboard_page()
+        )
+
+        self.pages.addWidget(
+            self.sales_page
+        )
 
     def keyPressEvent(self,event):
         if event.key()==Qt.Key_F11:

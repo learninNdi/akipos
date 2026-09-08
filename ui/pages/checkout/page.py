@@ -12,24 +12,30 @@ from PyQt5.QtWidgets import (
 )
 
 from ui.widgets.rupiah import rupiah
-from ui.styles.pages.checkout import CHECKOUT_STYLE
+from ui.styles.pages.checkout import get_checkout_style
 
 
 class CheckoutDialog(QDialog):
-    def __init__(self, cart_data, parent=None):
+    def __init__(self, cart_data, parent=None, theme="dark"):
         super().__init__(parent)
 
         self.cart_data = cart_data
+        self.current_theme = theme
 
         self.payment_method = None
         self.received_amount = 0
         self.change_amount = 0
 
+        self.setObjectName("CheckoutDialog")
+        self.setStyleSheet(
+            get_checkout_style(self.current_theme)
+        )
+
         self.setWindowTitle("Checkout")
         self.setModal(True)
         self.setFixedWidth(520)
 
-        self.setStyleSheet(CHECKOUT_STYLE)
+        self.setStyleSheet(self.current_theme)
 
         self.setup_ui()
         self.setup_connections()
@@ -106,6 +112,7 @@ class CheckoutDialog(QDialog):
         main_layout.addWidget(payment_label)
 
         self.payment_combo = QComboBox()
+        # self.payment_combo.setObjectName("ComboBox")
         self.payment_combo.setFixedHeight(44)
 
         self.payment_combo.addItems([
@@ -428,3 +435,18 @@ class CheckoutDialog(QDialog):
 
         except ValueError:
             return 0
+
+    def set_theme(self, theme):
+        self.current_theme = theme
+
+        self.setStyleSheet(
+            get_checkout_style(theme)
+        )
+
+    def apply_theme(self):
+        self.setStyleSheet(
+            get_checkout_style(
+                self.current_theme
+        )
+    )
+
