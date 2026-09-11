@@ -47,25 +47,25 @@ QSplitter::handle { background:#29364a; }
 SalesBarChart#painterBackgroundColor { background:#0b1220; }
 
 QComboBox#ComboBoxFilter {
-    background-color: #0b1220;
-    color: #f1f1f1;
-    border: 1px solid #454b54;
-    border-radius: 6px;
-    padding: 7px 10px;
-    min-height: 20px;
+    background-color: #151d2b; 
+    color: #f5f5f5; 
+    border: 1px solid #344158; 
+    border-radius: 7px; 
+    padding: 0 12px; 
+    font-size: 17px;
 }
 
 QComboBox#ComboBoxFilter:hover {
-    border: 1px solid #666d78;
+    border: 1px solid #4b5c78; 
 }
 
 QComboBox#ComboBoxFilter:focus {
-    border: 1px solid #7d8795;
+    border: 1px solid #5b8def; 
 }
 
 QComboBox#ComboBoxFilter::drop-down {
-    border: none;
-    width: 28px;
+    border: none; 
+    width: 30px; 
 }
 
 QComboBox#ComboBoxFilter::down-arrow {
@@ -74,12 +74,11 @@ QComboBox#ComboBoxFilter::down-arrow {
 }
 
 QComboBox#ComboBoxFilter QAbstractItemView {
-    background-color: #0b1220;
-    color: #f1f1f1;
-    border: 1px solid #454b54;
-    selection-background-color: #0b1220 ;
-    selection-color: #0b1220;
-    padding: 4px;
+    background-color: #151d2b; 
+    color: #f5f5f5; 
+    border: 1px solid #344158; 
+    selection-background-color: #2a3952; 
+    selection-color: #ffffff;
 }
 
 QPushButton#Danger {

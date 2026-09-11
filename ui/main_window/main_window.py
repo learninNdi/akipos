@@ -152,6 +152,11 @@ class MainWindow(QMainWindow):
             else "☾  Dark"
         )
 
+        if hasattr(self, "sales_page"):
+            self.sales_page.set_theme(
+                self.current_theme
+            )
+
     def create_pages(self):
         self.sales_page = SalesPage(self)
 

@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QPushButton,
     QFrame,
-    QButtonGroup,
 )
 
 from ui.widgets.rupiah import rupiah
@@ -16,30 +15,68 @@ from ui.styles.pages.checkout import get_checkout_style
 
 
 class CheckoutDialog(QDialog):
+
     def __init__(self, cart_data, parent=None, theme="dark"):
         super().__init__(parent)
 
-        self.cart_data = cart_data
+        self.cart_data = cart_data or {}
         self.current_theme = theme
 
         self.payment_method = None
         self.received_amount = 0
         self.change_amount = 0
 
-        self.setObjectName("CheckoutDialog")
-        self.setStyleSheet(
-            get_checkout_style(self.current_theme)
-        )
+        # =====================================================
+        # DIALOG
+        # =====================================================
 
+        self.setObjectName("CheckoutDialog")
         self.setWindowTitle("Checkout")
         self.setModal(True)
         self.setFixedWidth(520)
 
-        self.setStyleSheet(self.current_theme)
+        # Theme HARUS dipasang sebelum UI dibuat
+        self.apply_theme()
+
+        # =====================================================
+        # UI
+        # =====================================================
 
         self.setup_ui()
         self.setup_connections()
         self.update_payment_ui()
+
+    # =========================================================
+    # THEME
+    # =========================================================
+
+    def set_theme(self, theme):
+        """
+        Mengubah tema CheckoutDialog.
+        theme: "dark" atau "light"
+        """
+        if theme not in ("dark", "light"):
+            theme = "dark"
+
+        self.current_theme = theme
+        self.apply_theme()
+
+    def apply_theme(self):
+        """
+        Apply stylesheet sesuai tema aktif.
+        """
+        self.setStyleSheet(
+            get_checkout_style(self.current_theme)
+        )
+
+        # Refresh style object yang memakai dynamic objectName
+        if hasattr(self, "change_label"):
+            self.change_label.style().unpolish(
+                self.change_label
+            )
+            self.change_label.style().polish(
+                self.change_label
+            )
 
     # =========================================================
     # UI
@@ -48,7 +85,11 @@ class CheckoutDialog(QDialog):
     def setup_ui(self):
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(25, 25, 25, 25)
+
+        main_layout.setContentsMargins(
+            25, 25, 25, 25
+        )
+
         main_layout.setSpacing(18)
 
         # =====================================================
@@ -63,7 +104,9 @@ class CheckoutDialog(QDialog):
         title = QLabel("Checkout")
         title.setObjectName("CheckoutTitle")
 
-        subtitle = QLabel("Selesaikan pembayaran transaksi")
+        subtitle = QLabel(
+            "Selesaikan pembayaran transaksi"
+        )
         subtitle.setObjectName("CheckoutSubtitle")
 
         title_layout.addWidget(title)
@@ -82,11 +125,19 @@ class CheckoutDialog(QDialog):
         total_card.setObjectName("TotalCard")
 
         total_layout = QVBoxLayout(total_card)
-        total_layout.setContentsMargins(20, 18, 20, 18)
+
+        total_layout.setContentsMargins(
+            20, 18, 20, 18
+        )
+
         total_layout.setSpacing(5)
 
-        total_caption = QLabel("TOTAL PEMBAYARAN")
-        total_caption.setObjectName("TotalCaption")
+        total_caption = QLabel(
+            "TOTAL PEMBAYARAN"
+        )
+        total_caption.setObjectName(
+            "TotalCaption"
+        )
 
         self.total_label = QLabel(
             rupiah(
@@ -94,25 +145,48 @@ class CheckoutDialog(QDialog):
             )
         )
 
-        self.total_label.setObjectName("TotalAmount")
-        self.total_label.setAlignment(Qt.AlignRight)
+        self.total_label.setObjectName(
+            "TotalAmount"
+        )
 
-        total_layout.addWidget(total_caption)
-        total_layout.addWidget(self.total_label)
+        self.total_label.setAlignment(
+            Qt.AlignRight
+        )
 
-        main_layout.addWidget(total_card)
+        total_layout.addWidget(
+            total_caption
+        )
+
+        total_layout.addWidget(
+            self.total_label
+        )
+
+        main_layout.addWidget(
+            total_card
+        )
 
         # =====================================================
         # PAYMENT METHOD
         # =====================================================
 
-        payment_label = QLabel("Metode Pembayaran")
-        payment_label.setObjectName("SectionTitle")
+        payment_label = QLabel(
+            "Metode Pembayaran"
+        )
 
-        main_layout.addWidget(payment_label)
+        payment_label.setObjectName(
+            "SectionTitle"
+        )
+
+        main_layout.addWidget(
+            payment_label
+        )
 
         self.payment_combo = QComboBox()
-        # self.payment_combo.setObjectName("ComboBox")
+
+        self.payment_combo.setObjectName(
+            "PaymentCombo"
+        )
+
         self.payment_combo.setFixedHeight(44)
 
         self.payment_combo.addItems([
@@ -121,34 +195,67 @@ class CheckoutDialog(QDialog):
             "QRIS",
         ])
 
-        main_layout.addWidget(self.payment_combo)
+        main_layout.addWidget(
+            self.payment_combo
+        )
 
         # =====================================================
         # CASH SECTION
         # =====================================================
 
         self.cash_frame = QFrame()
-        self.cash_frame.setObjectName("CashFrame")
 
-        cash_layout = QVBoxLayout(self.cash_frame)
-        cash_layout.setContentsMargins(16, 16, 16, 16)
+        self.cash_frame.setObjectName(
+            "CashFrame"
+        )
+
+        cash_layout = QVBoxLayout(
+            self.cash_frame
+        )
+
+        cash_layout.setContentsMargins(
+            16, 16, 16, 16
+        )
+
         cash_layout.setSpacing(10)
 
-        received_title = QLabel("Uang Diterima")
-        received_title.setObjectName("FieldLabel")
+        # -----------------------------------------------------
+        # RECEIVED
+        # -----------------------------------------------------
+
+        received_title = QLabel(
+            "Uang Diterima"
+        )
+
+        received_title.setObjectName(
+            "FieldLabel"
+        )
 
         self.received_input = QLineEdit()
+
+        self.received_input.setObjectName(
+            "ReceivedInput"
+        )
+
         self.received_input.setPlaceholderText(
             "Masukkan jumlah uang"
         )
-        self.received_input.setFixedHeight(44)
 
-        cash_layout.addWidget(received_title)
-        cash_layout.addWidget(self.received_input)
+        self.received_input.setFixedHeight(
+            44
+        )
 
-        # -----------------------------------------------------
+        cash_layout.addWidget(
+            received_title
+        )
+
+        cash_layout.addWidget(
+            self.received_input
+        )
+
+        # =====================================================
         # QUICK CASH
-        # -----------------------------------------------------
+        # =====================================================
 
         quick_layout = QHBoxLayout()
         quick_layout.setSpacing(8)
@@ -168,59 +275,131 @@ class CheckoutDialog(QDialog):
                 rupiah(value)
             )
 
-            button.setObjectName("QuickCash")
-            button.setCursor(Qt.PointingHandCursor)
+            button.setObjectName(
+                "QuickCash"
+            )
+
+            button.setCursor(
+                Qt.PointingHandCursor
+            )
+
             button.setFixedHeight(34)
 
             button.clicked.connect(
                 lambda checked=False,
                 amount=value:
-                self.set_received_amount(amount)
+                self.set_received_amount(
+                    amount
+                )
             )
 
-            quick_layout.addWidget(button)
-            self.quick_buttons.append(button)
+            quick_layout.addWidget(
+                button
+            )
 
-        cash_layout.addLayout(quick_layout)
+            self.quick_buttons.append(
+                button
+            )
 
-        # -----------------------------------------------------
+        cash_layout.addLayout(
+            quick_layout
+        )
+
+        # =====================================================
         # CHANGE
-        # -----------------------------------------------------
+        # =====================================================
 
         change_layout = QHBoxLayout()
 
-        change_title = QLabel("Kembalian")
-        change_title.setObjectName("FieldLabel")
+        change_title = QLabel(
+            "Kembalian"
+        )
 
-        self.change_label = QLabel("Rp 0")
-        self.change_label.setObjectName("ChangeAmount")
-        self.change_label.setAlignment(Qt.AlignRight)
+        change_title.setObjectName(
+            "FieldLabel"
+        )
 
-        change_layout.addWidget(change_title)
-        change_layout.addWidget(self.change_label)
+        self.change_label = QLabel(
+            "Rp 0"
+        )
 
-        cash_layout.addLayout(change_layout)
+        self.change_label.setObjectName(
+            "ChangeAmount"
+        )
 
-        main_layout.addWidget(self.cash_frame)
+        self.change_label.setAlignment(
+            Qt.AlignRight
+        )
+
+        change_layout.addWidget(
+            change_title
+        )
+
+        change_layout.addWidget(
+            self.change_label
+        )
+
+        cash_layout.addLayout(
+            change_layout
+        )
+
+        main_layout.addWidget(
+            self.cash_frame
+        )
 
         # =====================================================
-        # BUTTON
+        # BOTTOM BUTTON
         # =====================================================
 
         main_layout.addStretch()
 
         button_layout = QHBoxLayout()
+
         button_layout.setSpacing(10)
 
-        self.cancel_button = QPushButton("BATAL")
-        self.cancel_button.setObjectName("Secondary")
-        self.cancel_button.setFixedHeight(46)
+        # -----------------------------------------------------
+        # CANCEL
+        # -----------------------------------------------------
 
-        self.confirm_button = QPushButton("KONFIRMASI")
-        self.confirm_button.setObjectName("Primary")
-        self.confirm_button.setFixedHeight(46)
+        self.cancel_button = QPushButton(
+            "BATAL"
+        )
 
-        self.confirm_button.setDefault(True)
+        self.cancel_button.setObjectName(
+            "Secondary"
+        )
+
+        self.cancel_button.setCursor(
+            Qt.PointingHandCursor
+        )
+
+        self.cancel_button.setFixedHeight(
+            46
+        )
+
+        # -----------------------------------------------------
+        # CONFIRM
+        # -----------------------------------------------------
+
+        self.confirm_button = QPushButton(
+            "KONFIRMASI"
+        )
+
+        self.confirm_button.setObjectName(
+            "Primary"
+        )
+
+        self.confirm_button.setCursor(
+            Qt.PointingHandCursor
+        )
+
+        self.confirm_button.setFixedHeight(
+            46
+        )
+
+        self.confirm_button.setDefault(
+            True
+        )
 
         button_layout.addWidget(
             self.cancel_button,
@@ -232,7 +411,9 @@ class CheckoutDialog(QDialog):
             2
         )
 
-        main_layout.addLayout(button_layout)
+        main_layout.addLayout(
+            button_layout
+        )
 
     # =========================================================
     # CONNECTION
@@ -274,6 +455,10 @@ class CheckoutDialog(QDialog):
 
             self.cash_frame.hide()
 
+            self.change_label.setText(
+                "Rp 0"
+            )
+
     # =========================================================
     # QUICK CASH
     # =========================================================
@@ -302,14 +487,20 @@ class CheckoutDialog(QDialog):
         )
 
         total = float(
-            self.cart_data.get("total", 0)
+            self.cart_data.get(
+                "total",
+                0
+            )
         )
 
         change = received - total
 
         if received <= 0:
 
-            self.change_label.setText("Rp 0")
+            self.change_label.setText(
+                "Rp 0"
+            )
+
             self.change_label.setObjectName(
                 "ChangeAmount"
             )
@@ -343,6 +534,8 @@ class CheckoutDialog(QDialog):
             self.change_label
         )
 
+        self.change_label.update()
+
     # =========================================================
     # CONFIRM
     # =========================================================
@@ -352,12 +545,15 @@ class CheckoutDialog(QDialog):
         method = self.payment_combo.currentText()
 
         total = float(
-            self.cart_data.get("total", 0)
+            self.cart_data.get(
+                "total",
+                0
+            )
         )
 
-        # -----------------------------------------------------
+        # =====================================================
         # CASH
-        # -----------------------------------------------------
+        # =====================================================
 
         if method == "Cash":
 
@@ -369,31 +565,45 @@ class CheckoutDialog(QDialog):
 
                 self.received_input.setFocus()
 
+                self.received_input.selectAll()
+
                 return
 
             self.payment_method = "cash"
-            self.received_amount = received
-            self.change_amount = received - total
 
-        # -----------------------------------------------------
+            self.received_amount = received
+
+            self.change_amount = (
+                received - total
+            )
+
+        # =====================================================
         # TRANSFER
-        # -----------------------------------------------------
+        # =====================================================
 
         elif method == "Transfer":
 
             self.payment_method = "transfer"
+
             self.received_amount = total
+
             self.change_amount = 0
 
-        # -----------------------------------------------------
+        # =====================================================
         # QRIS
-        # -----------------------------------------------------
+        # =====================================================
 
         elif method == "QRIS":
 
             self.payment_method = "qris"
+
             self.received_amount = total
+
             self.change_amount = 0
+
+        # =====================================================
+        # ACCEPT
+        # =====================================================
 
         self.accept()
 
@@ -405,11 +615,19 @@ class CheckoutDialog(QDialog):
 
         return {
             "payment_method": self.payment_method,
+
             "total": float(
-                self.cart_data.get("total", 0)
+                self.cart_data.get(
+                    "total",
+                    0
+                )
             ),
-            "received_amount": self.received_amount,
-            "change_amount": self.change_amount,
+
+            "received_amount":
+                self.received_amount,
+
+            "change_amount":
+                self.change_amount,
         }
 
     # =========================================================
@@ -424,29 +642,33 @@ class CheckoutDialog(QDialog):
 
         value = str(value)
 
-        value = value.replace("Rp", "")
-        value = value.replace("rp", "")
-        value = value.replace(" ", "")
-        value = value.replace(".", "")
-        value = value.replace(",", ".")
+        value = value.replace(
+            "Rp", ""
+        )
+
+        value = value.replace(
+            "rp", ""
+        )
+
+        value = value.replace(
+            " ",
+            ""
+        )
+
+        value = value.replace(
+            ".",
+            ""
+        )
+
+        value = value.replace(
+            ",",
+            "."
+        )
 
         try:
+
             return float(value)
 
         except ValueError:
+
             return 0
-
-    def set_theme(self, theme):
-        self.current_theme = theme
-
-        self.setStyleSheet(
-            get_checkout_style(theme)
-        )
-
-    def apply_theme(self):
-        self.setStyleSheet(
-            get_checkout_style(
-                self.current_theme
-        )
-    )
-
