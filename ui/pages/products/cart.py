@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QComboBox,
     QHeaderView,
+    QWidget,
 )
 
 from ui.widgets.rupiah import rupiah
@@ -33,6 +34,8 @@ class Cart(QFrame):
         self.setup_connections()
 
         self.load_used_batteries()
+
+        self.create_used_battery_row()
 
         # Default
         self.on_transaction_type_changed(0)
@@ -214,16 +217,42 @@ class Cart(QFrame):
         # USED BATTERY
         # ======================================================
 
-        self.used_battery_combo = QComboBox()
-        self.used_battery_combo.setObjectName("ComboBoxFilter")
+        self.used_battery_rows = []
 
-        self.used_battery_combo.addItem(
-            "Pilih aki bekas...",
-            None
+        self.used_battery_container = QWidget()
+
+        self.used_battery_layout = QVBoxLayout(
+            self.used_battery_container
+        )
+
+        self.used_battery_layout.setContentsMargins(
+            0,0,0,0
+        )
+
+        self.used_battery_layout.setSpacing(7)
+
+        # ------------------------------------------------------
+        # ADD BUTTON
+        # ------------------------------------------------------
+
+        self.add_used_battery_button = QPushButton(
+            "+ Tambah Aki Bekas"
+        )
+
+        self.add_used_battery_button.setObjectName(
+            "Secondary"
+        )
+
+        self.used_battery_layout.addWidget(
+            self.add_used_battery_button
         )
 
         used_layout.addWidget(
-            self.used_battery_combo
+            self.used_battery_container
+        )
+
+        layout.addWidget(
+            self.used_battery_frame
         )
 
         # ======================================================
@@ -335,13 +364,10 @@ class Cart(QFrame):
         try:
             self.used_products = (ProductService.get_used_products())
 
-            for product in self.used_products:
-                self.used_battery_combo.addItem(
-                    f"{product['item_name']}",
-                    f"{product['item_id']}",
-                )
         except Exception as e:
             print("ERROR LOAD USED BATTERIES:", e)
+
+            self.used_products = []
 
     # ==========================================================
     # CONNECTIONS
@@ -355,6 +381,10 @@ class Cart(QFrame):
 
         self.used_battery_price.textChanged.connect(
             self.update_total
+        )
+
+        self.add_used_battery_button.clicked.connect(
+            self.add_used_battery_row
         )
 
     # ==========================================================
@@ -431,79 +461,81 @@ class Cart(QFrame):
         # product dari ProductList sebagai barang baru.
         if self.transaction_type.currentIndex() == 2:
             return
+        
+        # Beli aki baru saja dari ProductList sebagai barang baru.
+        if self.transaction_type.currentIndex() == 0:
+            item_id = product["item_id"]
 
-        item_id = product["item_id"]
+            # ------------------------------------------------------
+            # SUDAH ADA
+            # ------------------------------------------------------
 
-        # ------------------------------------------------------
-        # SUDAH ADA
-        # ------------------------------------------------------
+            for item in self.items:
 
-        for item in self.items:
+                if item["item_id"] == item_id:
 
-            if item["item_id"] == item_id:
+                    new_quantity = item["quantity"]+1
 
-                new_quantity = item["quantity"]+1
+                    if new_quantity > product["quantity"]:
 
-                if new_quantity > product["quantity"]:
+                        QMessageBox.warning(
+                            self,
+                            "Stok Tidak Cukup",
+                            f'Stok {product["item_name"]} '
+                            f'hanya {product["quantity"]}.'
+                        )
 
-                    QMessageBox.warning(
-                        self,
-                        "Stok Tidak Cukup",
-                        f'Stok {product["item_name"]} '
-                        f'hanya {product["quantity"]}.'
-                    )
+                        return False
 
-                    return False
+                    item["quantity"] = new_quantity
 
-                item["quantity"] = new_quantity
+                    self.refresh()
 
-                self.refresh()
+                    return True
 
-                return True
+            # ------------------------------------------------------
+            # STOK
+            # ------------------------------------------------------
 
-        # ------------------------------------------------------
-        # STOK
-        # ------------------------------------------------------
+            if product["quantity"] <= 0:
 
-        if product["quantity"] <= 0:
+                QMessageBox.warning(
+                    self,
+                    "Stok Habis",
+                    f'Produk "{product["item_name"]}" '
+                    "tidak memiliki stok."
+                )
 
-            QMessageBox.warning(
-                self,
-                "Stok Habis",
-                f'Produk "{product["item_name"]}" '
-                "tidak memiliki stok."
-            )
+                return False
 
-            return False
+            if quantity > product["quantity"]:
 
-        if quantity > product["quantity"]:
+                QMessageBox.warning(
+                    self,
+                    "Stok Tidak Cukup",
+                    f'Stok {product["item_name"]} '
+                    f'hanya {product["quantity"]}.'
+                )
 
-            QMessageBox.warning(
-                self,
-                "Stok Tidak Cukup",
-                f'Stok {product["item_name"]} '
-                f'hanya {product["quantity"]}.'
-            )
+                return False
 
-            return False
+            # ------------------------------------------------------
+            # ADD
+            # ------------------------------------------------------
 
-        # ------------------------------------------------------
-        # ADD
-        # ------------------------------------------------------
+            self.items.append({
+                "item_id": product["item_id"],
+                "item_name": product["item_name"],
+                "price": float(
+                    product["selling_price"]
+                ),
+                "quantity": quantity,
+                "quantity": 1,
+            })
 
-        self.items.append({
-            "item_id": product["item_id"],
-            "item_name": product["item_name"],
-            "price": float(
-                product["selling_price"]
-            ),
-            "quantity": quantity,
-            "quantity": 1,
-        })
+            self.refresh()
 
-        self.refresh()
-
-        return True
+        # return True
 
     # ==========================================================
     # REFRESH
@@ -622,28 +654,36 @@ class Cart(QFrame):
 
     def get_used_battery_value(self):
 
-        text = (
-            self.used_battery_price
-            .text()
-            .strip()
-        )
+        total = 0
 
-        if not text:
-            return 0
+        for row in self.used_battery_rows:
 
-        try:
-
-            return float(
-                text
-                .replace("Rp", "")
-                .replace(".", "")
-                .replace(",", "")
+            text = (
+                row["price"]
+                .text()
                 .strip()
             )
 
-        except ValueError:
+            if not text:
+                continue
 
-            return 0
+            try:
+
+                price = float(
+                    text
+                    .replace("Rp", "")
+                    .replace(".", "")
+                    .replace(",", "")
+                    .strip()
+                )
+
+                total += price
+
+            except ValueError:
+
+                continue
+
+        return total
 
     def get_total(self):
 
@@ -753,10 +793,216 @@ class Cart(QFrame):
                 "total": total
             })
 
+        transaction_type = (
+            self.transaction_type.currentIndex()
+        )
+
         return {
             "items": items,
-            "transaction_type": self.transaction_type.currentIndex(),
+            "transaction_type": transaction_type,
             "customer_name": self.customer_input.text().strip(),
             "vehicle_number": self.vehicle_input.text().strip(),
+            "used_batteries": self.get_used_batteries(),
+            "used_battery_total": self.get_used_battery_value(),
             "total": self.get_total()
         }
+
+    def create_used_battery_row(self):
+
+        row_widget = QWidget()
+
+        row_layout = QHBoxLayout(
+            row_widget
+        )
+
+        row_layout.setContentsMargins(
+            0,0,0,0
+        )
+
+        row_layout.setSpacing(7)
+
+        # ==================================================
+        # COMBOBOX
+        # ==================================================
+
+        combo = QComboBox()
+
+        combo.setObjectName(
+            "ComboBoxFilter"
+        )
+
+        combo.addItem(
+            "Pilih aki bekas...",
+            None
+        )
+
+        for product in self.used_products:
+            combo.addItem(
+                product["item_name"],
+                product["item_id"]
+            )
+
+        # ==================================================
+        # PRICE
+        # ==================================================
+
+        price_input = QLineEdit()
+
+        price_input.setPlaceholderText(
+            "Harga beli"
+        )
+
+        # ==================================================
+        # REMOVE BUTTON
+        # ==================================================
+
+        remove_button = QPushButton(
+            "×"
+        )
+
+        remove_button.setObjectName(
+            "Danger"
+        )
+
+        remove_button.setFixedWidth(
+            32
+        )
+
+        # ==================================================
+        # LAYOUT
+        # ==================================================
+
+        row_layout.addWidget(
+            combo,
+            2
+        )
+
+        row_layout.addWidget(
+            price_input,
+            1
+        )
+
+        row_layout.addWidget(
+            remove_button
+        )
+
+        # ==================================================
+        # INSERT BEFORE ADD BUTTON
+        # ==================================================
+
+        index = (
+            self.used_battery_layout.count() - 1
+        )
+
+        self.used_battery_layout.insertWidget(
+            index,
+            row_widget
+        )
+
+        # ==================================================
+        # SAVE ROW
+        # ==================================================
+
+        row_data = {
+            "widget": row_widget,
+            "combo": combo,
+            "price": price_input
+        }
+
+        self.used_battery_rows.append(
+            row_data
+        )
+
+        # ==================================================
+        # CONNECTION
+        # ==================================================
+
+        price_input.textChanged.connect(
+            self.update_total
+        )
+
+        remove_button.clicked.connect(
+            lambda: self.remove_used_battery_row(
+                row_data
+            )
+        )
+
+        return row_data
+
+    def remove_used_battery_row(
+            self,
+            row_data
+    ):
+
+        if row_data in self.used_battery_rows:
+            self.used_battery_rows.remove(
+                row_data
+            )
+
+        row_data["widget"].deleteLater()
+
+        self.update_total()
+
+    def add_used_battery_row(self):
+
+        self.create_used_battery_row()
+
+        self.update_total()
+
+    def get_used_batteries(self):
+
+        batteries = []
+
+        for row in self.used_battery_rows:
+            product_id = (
+                row["combo"].currentData()
+            )
+
+            if not product_id:
+                continue
+
+            product_name = (
+                row["combo"].currentText()
+            )
+
+            price = (
+                self.get_price_from_input(
+                    row["price"]
+                )
+            )
+
+            batteries.append({
+                "product_id": product_id,
+                "product_name": product_name,
+                "purchase_price": price
+            })
+
+        return batteries
+
+    def get_price_from_input(
+        self,
+        input_widget
+    ):
+
+        text = (
+            input_widget
+            .text()
+            .strip()
+        )
+
+        if not text:
+            return 0
+
+        try:
+
+            return float(
+                text
+                .replace("Rp", "")
+                .replace(".", "")
+                .replace(",", "")
+                .strip()
+            )
+
+        except ValueError:
+
+            return 0
