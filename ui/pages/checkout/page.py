@@ -237,8 +237,12 @@ class CheckoutDialog(QDialog):
             "ReceivedInput"
         )
 
-        self.received_input.setPlaceholderText(
-            "Masukkan jumlah uang"
+        # self.received_input.setPlaceholderText(
+        #     "Masukkan jumlah uang"
+        # )
+
+        self.received_input.setText(
+            str(self.cart_data.get("total", 0))
         )
 
         self.received_input.setFixedHeight(

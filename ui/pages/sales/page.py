@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSplitter, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QDialog, QMessageBox, QSplitter, QVBoxLayout, QWidget
 
 from ui.pages.products.product_list import ProductList
 from ui.pages.products.cart import Cart
@@ -75,13 +75,24 @@ class SalesPage(QWidget):
             theme=self.current_theme
         )
 
-        if dialog.exec_():
+        if dialog.exec_() != QDialog.Accepted:
+            return
 
-            payment_data = (
-                dialog.get_payment_data()
-            )
+        payment_data = (
+            dialog.get_payment_data()
+        )
 
+        try:
             print(payment_data)
+
+            self.cart.clear()
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Checkout Gagal",
+                f"Transaksi gagal diproses:\n{e}"
+            )
 
     def set_theme(self, theme):
 

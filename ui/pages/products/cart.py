@@ -379,10 +379,6 @@ class Cart(QFrame):
             self.on_transaction_type_changed
         )
 
-        self.used_battery_price.textChanged.connect(
-            self.update_total
-        )
-
         self.add_used_battery_button.clicked.connect(
             self.add_used_battery_row
         )
@@ -414,11 +410,7 @@ class Cart(QFrame):
             self.used_battery_frame.show()
 
             self.used_battery_title.setText(
-                "Aki Lama"
-            )
-
-            self.used_battery_price.setPlaceholderText(
-                "Nilai tukar tambah"
+                "Aki Lama / Nilai Tukar"
             )
 
             self.pay_button.setText(
@@ -434,11 +426,7 @@ class Cart(QFrame):
             self.used_battery_frame.show()
 
             self.used_battery_title.setText(
-                "Aki Bekas"
-            )
-
-            self.used_battery_price.setPlaceholderText(
-                "Harga beli aki bekas"
+                "Aki Bekas yang Dibeli"
             )
 
             self.pay_button.setText(
@@ -462,8 +450,9 @@ class Cart(QFrame):
         if self.transaction_type.currentIndex() == 2:
             return
         
-        # Beli aki baru saja dari ProductList sebagai barang baru.
-        if self.transaction_type.currentIndex() == 0:
+        # Penjualan Biasa dan Tukar Tambah sama-sama
+        # menggunakan ProductList untuk memilih aki baru.
+        if self.transaction_type.currentIndex() in (0, 1):
             item_id = product["item_id"]
 
             # ------------------------------------------------------
@@ -530,7 +519,6 @@ class Cart(QFrame):
                     product["selling_price"]
                 ),
                 "quantity": quantity,
-                "quantity": 1,
             })
 
             self.refresh()
@@ -750,29 +738,93 @@ class Cart(QFrame):
 
         self.vehicle_input.clear()
 
-        self.used_battery_combo.setCurrentIndex(
-            0
-        )
+        # Hapus seluruh baris aki bekas
+        for row_data in self.used_battery_rows[:]:
+            row_data["widget"].deleteLater()
 
-        self.used_battery_price.clear()
+        self.used_battery_rows.clear()
 
-        self.transaction_type.setCurrentIndex(
-            0
-        )
+        # Buat satu baris kosong baru
+        self.create_used_battery_row()
+
+        self.transaction_type.setCurrentIndex(0)
 
         self.refresh()
 
     def checkout(self):
-        if self.table.rowCount() == 0:
-            QMessageBox.warning(
-                self,
-                "Checkout",
-                "Keranjang masih kosong."
-            )
 
+        transaction_type = self.transaction_type.currentIndex()
+
+        # ======================================================
+        # 0 = PENJUALAN BIASA
+        # 1 = TUKAR TAMBAH
+        # ======================================================
+
+        if transaction_type in (0, 1):
+
+            if self.table.rowCount() == 0:
+                QMessageBox.warning(
+                    self,
+                    "Checkout",
+                    "Keranjang masih kosong."
+                )
+                return
+
+            # Tukar tambah wajib memiliki aki bekas
+            if transaction_type == 1:
+                used_batteries = self.get_used_batteries()
+
+                if not used_batteries:
+                    QMessageBox.warning(
+                        self,
+                        "Tukar Tambah",
+                        "Silakan pilih minimal satu aki lama."
+                    )
+                    return
+
+                for battery in used_batteries:
+                    if battery["purchase_price"] <= 0:
+                        QMessageBox.warning(
+                            self,
+                            "Tukar Tambah",
+                            "Nilai tukar aki lama harus lebih dari 0."
+                        )
+                        return
+
+            self.checkout_requested.emit(
+                self.get_cart_data()
+            )
             return
 
-        self.checkout_requested.emit(self.get_cart_data())
+        # ======================================================
+        # 2 = BELI AKI BEKAS
+        # ======================================================
+
+        if transaction_type == 2:
+
+            used_batteries = self.get_used_batteries()
+
+            if not used_batteries:
+                QMessageBox.warning(
+                    self,
+                    "Beli Aki Bekas",
+                    "Silakan pilih minimal satu aki bekas."
+                )
+                return
+
+            for battery in used_batteries:
+                if battery["purchase_price"] <= 0:
+                    QMessageBox.warning(
+                        self,
+                        "Beli Aki Bekas",
+                        "Harga beli aki bekas harus lebih dari 0."
+                    )
+                    return
+
+            self.checkout_requested.emit(
+                self.get_cart_data()
+            )
+            return
 
     def get_cart_data(self):
         items = []
